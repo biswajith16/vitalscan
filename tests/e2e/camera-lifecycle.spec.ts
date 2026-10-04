@@ -8,12 +8,19 @@ test("real face tracking, 30-second capture, POS analysis, and persistence", asy
   page,
 }) => {
   test.setTimeout(65000);
+  await page.setViewportSize({ width: 390, height: 844 });
   const portrait = (await readFile("tests/fixtures/portrait.jpg")).toString(
     "base64",
   );
-  await page.addInitScript(
+  await page.addInitScript(() =>
+    localStorage.setItem("vitalscan-onboarded", "1"),
+  );
+  await page.goto("/scan");
+  await page.evaluate(
     async ({ portrait }) => {
-      localStorage.setItem("vitalscan-onboarded", "1");
+      Object.defineProperty(navigator, "mediaDevices", {
+        value: navigator.mediaDevices,
+      });
       Object.defineProperty(navigator.mediaDevices, "getUserMedia", {
         value: async () => {
           const image = new Image();
@@ -58,7 +65,6 @@ test("real face tracking, 30-second capture, POS analysis, and persistence", asy
     },
     { portrait },
   );
-  await page.goto("/scan");
   await page.getByRole("button", { name: "Enable camera & start" }).click();
   await expect(page.getByRole("progressbar")).toBeVisible({ timeout: 20000 });
   await expect(page).toHaveURL(/\/history\//, { timeout: 40000 });

@@ -37,6 +37,34 @@ before publication. See [the six-domain review](UI_REVIEW.md).
 Screenshots of the final desktop and mobile home pages are saved beside this file.
 No user scan data is shown in these screenshots.
 
+## Production release
+
+- Public HTTPS app: [vitalscan-nine.vercel.app](https://vitalscan-nine.vercel.app).
+- Private repository: [biswajith16/vitalscan](https://github.com/biswajith16/vitalscan),
+  default branch `codex/vitalscan`.
+- Vercel project: `biswa-projects1/vitalscan`; Next.js configuration is pinned in
+  `vercel.json`. The initial generic-static-site preset caused a 404 and was
+  corrected before handoff. Production responds with HTTP 200.
+- Browser camera policy permits this origin only; framing and microphone access
+  remain blocked. Camera processing uses same-origin model/WASM assets.
+- Full 30-second synthetic camera workflow verified on the public HTTPS site in
+  Chromium and WebKit at 390 px width. Test overrides retain the WebKit media-device
+  wrapper so wrapper garbage collection does not silently restore the native camera.
+- The route check accepts HTTP 200 and valid CDN cache-revalidation HTTP 304, while
+  rejecting error status codes.
+- `npm audit --omit=dev`: zero reported runtime vulnerabilities. The documented
+  development-only dependency advisory remains.
+- Deployment uses the authenticated CLI. Automatic GitHub deployment was not
+  connected because Vercel’s GitHub integration lacks access to the private repo;
+  no repository visibility or account-wide permissions were changed to bypass it.
+
+To rerun the live suite:
+
+```bash
+PLAYWRIGHT_BASE_URL=https://vitalscan-nine.vercel.app \
+PLAYWRIGHT_BROWSERS_PATH=/private/tmp/vitalscan-browsers npm run test:e2e
+```
+
 ## Not verified
 
 - Physiological accuracy against a reference sensor, or clinical validation.

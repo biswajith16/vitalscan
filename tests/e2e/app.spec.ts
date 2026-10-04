@@ -80,7 +80,8 @@ test("primary routes, responsive widths, and accessible controls", async ({
       "/about",
     ]) {
       const response = await page.goto(route);
-      expect(response?.status(), `${route} HTTP status`).toBe(200);
+      // WebKit exposes successful cache revalidation as 304 on the live CDN.
+      expect([200, 304], `${route} HTTP status`).toContain(response?.status());
       await expect(page.locator("h1")).toHaveCount(1);
       await expect(page.locator("body")).toBeVisible();
       expect(
@@ -179,14 +180,19 @@ test("camera permission denial offers recovery without fabricated readings", asy
   page,
 }) => {
   await skipOnboarding(page);
-  await page.addInitScript(() => {
+  await page.goto("/scan");
+  await page.evaluate(() => {
+    // Retain WebKit's native wrapper; garbage collection can otherwise discard
+    // an instance override and restore the real permission prompt mid-test.
+    Object.defineProperty(navigator, "mediaDevices", {
+      value: navigator.mediaDevices,
+    });
     Object.defineProperty(navigator.mediaDevices, "getUserMedia", {
       value: async () => {
         throw new DOMException("Denied for test", "NotAllowedError");
       },
     });
   });
-  await page.goto("/scan");
   await page.getByRole("button", { name: "Enable camera & start" }).click();
   await expect(page.locator(".error-notice")).toContainText(
     "Camera access wasn’t allowed",
@@ -200,7 +206,11 @@ test("no-face camera uses real model and stops tracks on cancel", async ({
   page,
 }) => {
   await skipOnboarding(page);
-  await page.addInitScript(() => {
+  await page.goto("/scan");
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "mediaDevices", {
+      value: navigator.mediaDevices,
+    });
     Object.defineProperty(navigator.mediaDevices, "getUserMedia", {
       value: async (constraints: MediaStreamConstraints) => {
         document.documentElement.dataset.cameraConstraints =
@@ -226,7 +236,6 @@ test("no-face camera uses real model and stops tracks on cancel", async ({
       },
     });
   });
-  await page.goto("/scan");
   await page.getByRole("button", { name: "Enable camera & start" }).click();
   await expect(page.locator(".camera-guidance")).toHaveText(
     "Position your face inside the guide",
@@ -246,7 +255,11 @@ test("cancelling a pending permission request closes a late camera", async ({
   page,
 }) => {
   await skipOnboarding(page);
-  await page.addInitScript(() => {
+  await page.goto("/scan");
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "mediaDevices", {
+      value: navigator.mediaDevices,
+    });
     Object.defineProperty(navigator.mediaDevices, "getUserMedia", {
       value: () =>
         new Promise((resolve) => {
@@ -266,7 +279,6 @@ test("cancelling a pending permission request closes a late camera", async ({
         }),
     });
   });
-  await page.goto("/scan");
   await page.getByRole("button", { name: "Enable camera & start" }).click();
   await expect(page.getByRole("status")).toContainText("Allow camera access");
   await page.getByRole("button", { name: "Cancel scan" }).click();
