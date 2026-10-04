@@ -6,6 +6,8 @@ A mobile-first, local-first research prototype built with Next.js App Router,
 React, strict TypeScript, Tailwind CSS, Lucide, Framer Motion, Recharts, Zod, and
 IndexedDB. No account, paid API, hosted AI service, or database server is required.
 
+**Live app:** [vitalscan-nine.vercel.app](https://vitalscan-nine.vercel.app)
+
 > This prototype provides wellness information and experimental camera-based
 > estimates. It does not provide medical diagnosis or replace professional medical care.
 
@@ -231,6 +233,8 @@ npm run start
    and `public/mediapipe` assets. Do not commit `.next` or `node_modules`.
 2. In Vercel, select **Add New → Project**, then import that repository.
 3. Keep **Next.js** as the framework and the project root as the root directory.
+   `vercel.json` pins the Next.js preset so CLI-created projects do not deploy as
+   generic static sites.
 4. Use **npm install** as the install command and **npm run build** as the build
    command. Leave output directory at the framework default. No environment
    variables or paid APIs are required.
@@ -241,9 +245,16 @@ npm run start
 
 The source repository is [biswajith16/vitalscan](https://github.com/biswajith16/vitalscan)
 (private). Server pages contain no health records; measurements remain in the browser.
-To deploy from a linked local checkout, run `npx vercel --prod`. No runtime secrets
+To deploy from a linked local checkout, run `npx vercel --prod`. To link a fresh
+checkout, use `npx vercel link --project vitalscan --scope biswa-projects1`.
+No runtime secrets
 are required. Production camera access must use the deployment’s HTTPS URL directly,
 not an embedded preview.
+
+The production site is deployed through the authenticated CLI. Automatic GitHub
+deployments are not connected: the Vercel GitHub integration must first be granted
+access to this private repository. The repository remains private; do not make it
+public merely to bypass an integration permission issue.
 
 ## PWA installation and offline behavior
 

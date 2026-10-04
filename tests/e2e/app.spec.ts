@@ -79,7 +79,8 @@ test("primary routes, responsive widths, and accessible controls", async ({
       "/settings/privacy",
       "/about",
     ]) {
-      await page.goto(route);
+      const response = await page.goto(route);
+      expect(response?.status(), `${route} HTTP status`).toBe(200);
       await expect(page.locator("h1")).toHaveCount(1);
       await expect(page.locator("body")).toBeVisible();
       expect(
