@@ -81,6 +81,14 @@ export function ScanReport({
             <ShieldCheck size={17} />
             {record.heartRateConfidence}% signal confidence
           </div>
+          {record.heartRateConfidence < 60 && (
+            <p className="small">
+              <strong>Limited signal confidence.</strong> The recording passed
+              the individual signal checks, but consistency was limited. Repeat
+              the scan before drawing conclusions; this is not a medical
+              measurement.
+            </p>
+          )}
         </section>
         <section className="card quality-result">
           <div className="section-title">

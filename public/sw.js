@@ -1,6 +1,6 @@
 /* Same-origin assets only. No camera frames or readings pass through this worker.
  * Native document navigation avoids fragile offline caching of Next RSC payloads. */
-const CACHE = "vitalscan-shell-v2";
+const CACHE = "vitalscan-shell-v3";
 const PAGES = [
   "/",
   "/scan",

@@ -1,0 +1,14 @@
+.git/
+node_modules/
+.next/
+out/
+coverage/
+test-results/
+playwright-report/
+certificates/
+*.tsbuildinfo
+.DS_Store
+.env*
+.vercel/
+components/cards/home-dashboard 2.tsx
+components/navigation/shell 2.tsx

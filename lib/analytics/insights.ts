@@ -61,6 +61,8 @@ export function insights(scans: ScanRecord[], now = Date.now()): string[] {
   return output;
 }
 export function comparison(scan: ScanRecord, scans: ScanRecord[]) {
+  if (scan.heartRateConfidence < 60)
+    return "This estimate has limited signal confidence. Repeat the scan before comparing it with your history.";
   const earlier = scans
     .filter(
       (s) =>

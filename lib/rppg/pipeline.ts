@@ -1,4 +1,9 @@
-import type { AcquisitionQuality, Measurement, RGBSample } from "@/types/scan";
+import type {
+  AcquisitionQuality,
+  Measurement,
+  RGBSample,
+  ScanDiagnostics,
+} from "@/types/scan";
 import {
   bandpass,
   clamp,
@@ -7,7 +12,7 @@ import {
   spectrum,
   std,
 } from "@/lib/signal-processing/math";
-export const ALGORITHM_VERSION = "POS-1.0.0";
+export const ALGORITHM_VERSION = "POS-1.1.0";
 export const SAMPLE_RATE = 15;
 
 export function resample(samples: RGBSample[], fs = SAMPLE_RATE): RGBSample[] {
@@ -58,13 +63,14 @@ export function extractPOS(samples: RGBSample[], fs = SAMPLE_RATE) {
 /** Quality: 30% spectral confidence, 25% completeness, 20% motion,
  * 15% tracking, 10% illumination. Inputs and result are 0–100. */
 export function qualityScore(q: AcquisitionQuality, confidence: number) {
+  const score = (value: number) => (Number.isFinite(value) ? clamp(value) : 0);
   return Math.round(
     clamp(
-      0.3 * clamp(confidence) +
-        0.25 * clamp(q.usable) +
-        0.2 * clamp(q.motion) +
-        0.15 * clamp(q.tracking) +
-        0.1 * clamp(q.lighting),
+      0.3 * score(confidence) +
+        0.25 * score(q.usable) +
+        0.2 * score(q.motion) +
+        0.15 * score(q.tracking) +
+        0.1 * score(q.lighting),
     ),
   );
 }
@@ -78,38 +84,135 @@ export function analyze(
   samples: RGBSample[],
   q: AcquisitionQuality,
 ): Measurement {
+  const duration =
+    samples.length > 1 ? (samples.at(-1)!.t - samples[0].t) / 1000 : 0;
+  const diagnostics: ScanDiagnostics = {
+    algorithmVersion: ALGORITHM_VERSION,
+    sampleCount: samples.length,
+    durationSeconds: Number.isFinite(duration) ? Math.max(0, duration) : 0,
+    usableFramesPerSecond:
+      duration > 0 && Number.isFinite(duration)
+        ? (samples.length - 1) / duration
+        : 0,
+    checks: [],
+  };
+  const failures: string[] = [];
+  const check = (
+    id: string,
+    label: string,
+    value: number,
+    unit: string,
+    requirement: string,
+    passed: boolean,
+    message: string,
+  ) => {
+    const finite = Number.isFinite(value);
+    diagnostics.checks.push({
+      id,
+      label,
+      value: finite ? value : null,
+      unit,
+      requirement,
+      passed: finite && passed,
+    });
+    if (!finite || !passed) failures.push(message);
+  };
   const reject = (reason: string, confidence = 0, snrDb = 0): Measurement => ({
     heartRate: null,
     confidence,
     quality: qualityScore(q, confidence),
     snrDb,
     reason,
+    diagnostics,
   });
-  if (
-    samples.length < 300 ||
-    samples.some((s) => ![s.t, s.r, s.g, s.b].every(Number.isFinite))
-  )
-    return reject(
-      "There weren’t enough usable camera samples. Try brighter, even lighting.",
-    );
-  const duration = (samples.at(-1)!.t - samples[0].t) / 1000;
-  if (
-    duration < 25 ||
-    q.usable < 80 ||
-    q.tracking < 80 ||
-    q.motion < 65 ||
-    q.lighting < 55
-  )
-    return reject(
-      "Movement, lighting, or lost face tracking interrupted the signal. Try again while holding still.",
-    );
+  const valid =
+    samples.every(
+      (s) =>
+        [s.t, s.r, s.g, s.b].every(Number.isFinite) &&
+        Math.min(s.r, s.g, s.b) > 0,
+    ) &&
+    Object.values(q).every((v) => Number.isFinite(v) && v >= 0 && v <= 100);
+  check(
+    "valid-data",
+    "Camera data",
+    valid ? 1 : 0,
+    "",
+    "Valid timestamps, RGB values and quality scores",
+    valid,
+    "The camera returned invalid data. Reload the page and try again.",
+  );
+  if (!valid) return reject(failures[0]);
+  check(
+    "sample-count",
+    "Usable frames",
+    samples.length,
+    "frames",
+    "At least 300",
+    samples.length >= 300,
+    `Only ${samples.length} usable camera frames were captured. Close other apps or try another browser or device; camera processing may be too slow.`,
+  );
+  check(
+    "duration",
+    "Signal coverage",
+    duration,
+    "s",
+    "At least 25 seconds",
+    duration >= 25,
+    "The usable recording was too short. Keep your face in view for the full scan.",
+  );
+  check(
+    "usable",
+    "Usable recording",
+    q.usable,
+    "%",
+    "At least 80%",
+    q.usable >= 80,
+    "Too much of the recording was unusable. Check face position, lighting and stability before retrying.",
+  );
+  check(
+    "tracking",
+    "Face tracking",
+    q.tracking,
+    "%",
+    "At least 80%",
+    q.tracking >= 80,
+    "Face tracking was interrupted. Keep one face centered and fully visible.",
+  );
+  check(
+    "motion",
+    "Stability",
+    q.motion,
+    "%",
+    "At least 65%",
+    q.motion >= 65,
+    "The recording contains too much movement. Support the device and keep your head comfortably still.",
+  );
+  check(
+    "lighting",
+    "Lighting",
+    q.lighting,
+    "%",
+    "At least 55%",
+    q.lighting >= 55,
+    "The camera could not capture enough evenly exposed skin. Avoid strong shadows or overexposed areas and retry.",
+  );
+  let maxGap = 0,
+    monotonic = true;
   for (let i = 1; i < samples.length; i++) {
     const gap = samples[i].t - samples[i - 1].t;
-    if (gap <= 0 || gap > 650)
-      return reject(
-        "The camera signal had gaps. Keep your face in view for the full scan.",
-      );
+    maxGap = Math.max(maxGap, gap);
+    if (gap <= 0) monotonic = false;
   }
+  check(
+    "timing",
+    "Frame continuity",
+    maxGap,
+    "ms",
+    "Increasing timestamps; no gap over 650 ms",
+    monotonic && maxGap <= 650,
+    "The camera signal had gaps or repeated timestamps. Keep this tab visible and try closing other camera apps.",
+  );
+  if (failures.length) return reject(failures[0]);
   const signal = bandpass(
     detrend(extractPOS(resample(samples))),
     SAMPLE_RATE,
@@ -127,25 +230,61 @@ export function analyze(
   const confidence = spectralConfidence(full.snrDb, agreement);
   const brightness = samples.map((s) => (s.r + s.g + s.b) / 3);
   const lightingVariation = std(brightness) / Math.max(mean(brightness), 1);
-  if (
-    full.energy < 1e-9 ||
-    full.snrDb < 3 ||
-    agreement > 8 ||
-    confidence < 60 ||
-    lightingVariation > 0.12 ||
-    full.hz <= 0.72 ||
-    full.hz >= 2.98
-  ) {
-    return reject(
-      "The pulse signal wasn’t consistent enough for a reliable estimate. Try again in steady natural light.",
-      confidence,
-      full.snrDb,
-    );
-  }
+  check(
+    "energy",
+    "Optical variation",
+    full.energy,
+    "",
+    "At least 1e-9",
+    full.energy >= 1e-9,
+    "The camera did not capture enough color variation to estimate a pulse. Try a different camera or browser. More light alone may not resolve this.",
+  );
+  check(
+    "snr",
+    "Signal separation",
+    full.snrDb,
+    "dB",
+    "At least 3 dB",
+    full.snrDb >= 3,
+    "A pulse could not be separated from interference in the recording. Try another camera or browser; camera exposure and image processing can affect the signal even in natural light.",
+  );
+  check(
+    "agreement",
+    "Agreement across the scan",
+    agreement,
+    "BPM difference",
+    "No more than 8 BPM difference",
+    agreement <= 8,
+    "The two halves of the recording did not agree on a pulse estimate. Rest briefly and retry. If this repeats, try a different camera or browser.",
+  );
+  check(
+    "exposure",
+    "Exposure variation",
+    lightingVariation * 100,
+    "%",
+    "No more than 12%",
+    lightingVariation <= 0.12,
+    "The recorded brightness changed too much. Camera auto-exposure can cause this even under steady lighting. Try another camera or browser.",
+  );
+  // Never expose an unaccepted candidate as a BPM value in the diagnostics.
+  const insideBand = full.hz > 0.72 && full.hz < 2.98;
+  check(
+    "band",
+    "Analysis range",
+    insideBand ? 1 : 0,
+    "",
+    "Peak clear of the analysis-band edges",
+    insideBand,
+    "The strongest signal was at the edge of this algorithm’s range, so it cannot provide an estimate. Try another recording; no heart rate has been determined.",
+  );
+  // Confidence is a descriptive score derived from SNR and agreement, not a
+  // third independent observation or a calibrated probability. Do not gate twice.
+  if (failures.length) return reject(failures[0], confidence, full.snrDb);
   return {
     heartRate: Math.round(full.hz * 60),
     confidence,
     quality: qualityScore(q, confidence),
     snrDb: full.snrDb,
+    diagnostics,
   };
 }

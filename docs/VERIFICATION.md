@@ -1,14 +1,15 @@
 # Implementation verification
 
-Verified October 4, 2026 on the local production build.
+Verified October 23, 2026 on the local production build (POS-1.1.0).
+See [the scan rejection investigation](SCAN_RELIABILITY_FIX.md) for this release.
 
 | Check | Result |
 | --- | --- |
-| `npm test` | 38 passed across 5 files |
+| `npm test` | 49 passed across 6 files |
 | `npm run typecheck` | Passed |
 | `npm run lint` | Passed, no warnings |
 | `npm run build` | Passed using Next.js 16.3.8 and Webpack |
-| `npm run test:e2e` | 15 passed; 1 WebKit offline check intentionally skipped |
+| `npm run test:e2e` | 19 passed in 3.7 minutes; 1 WebKit offline check intentionally skipped |
 | Responsive routes | All main routes fit 375, 390, 430 and 1280 px widths in Chromium and WebKit |
 | Accessibility | No axe WCAG 2 A/AA or 2.1 AA violations on audited home, scan, history and settings pages |
 | Camera permission | Denial recovery verified in Chromium and WebKit |
@@ -16,10 +17,11 @@ Verified October 4, 2026 on the local production build.
 | Front-facing preference | Camera request asserted `facingMode: { ideal: "user" }` |
 | Camera cleanup | Track stop confirmed after cancellation, late permission resolution, and completed capture in both engines |
 | Startup recovery | Deadline disposal, abort, unsupported-constraint fallback, insecure context and permission-denial tests pass |
-| Full 30-second workflow | Real tracker, readiness, RGB sampling, POS, analysis and persistence passed in Chromium and WebKit with a synthetic 72 BPM optical fixture |
+| Full 30-second workflow | Real tracker, readiness, RGB sampling, POS, analysis and persistence passed in Chromium and WebKit with steady and changing synthetic optical fixtures; flat signals rejected without saving a reading |
+| Rejection diagnostics | Exact failed checks visible, lighting shown as passed in the flat fixture, camera stopped, no rejected BPM; expanded state passes axe in both engines |
 | Storage | Reload persistence, individual-delete cancel/confirm, delete-all, and missing-record recovery passed |
 | Trends | Filters and counts passed; demo records excluded; exact readings table available |
-| Report export | Print invoked, report title and print layout verified |
+| Report export | Print invoked, report title and print layout verified, limited-confidence warning retained on screen and in print |
 | PWA | Manifest inspected; production service worker and offline history, cached reports and trends passed in Chromium |
 | Onboarding | Three screens complete once and remain dismissed after reload |
 

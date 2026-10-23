@@ -60,4 +60,10 @@ describe("local trends and insights", () => {
       "Poor",
     ]);
   });
+  it("does not call a limited-confidence reading stable", () => {
+    const result = comparison(record({ heartRateConfidence: 58 }), []);
+    expect(result).toContain("limited signal confidence");
+    expect(result).toContain("Repeat the scan");
+    expect(result).not.toContain("stable pulse");
+  });
 });

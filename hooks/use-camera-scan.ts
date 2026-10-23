@@ -17,7 +17,7 @@ import {
 import { ALGORITHM_VERSION, analyze } from "@/lib/rppg/pipeline";
 import { mean } from "@/lib/signal-processing/math";
 import { scanStorage } from "@/lib/storage/scans";
-import type { RGBSample, ScanRecord } from "@/types/scan";
+import type { RGBSample, ScanRecord, ScanDiagnostics } from "@/types/scan";
 
 type Phase =
   | "idle"
@@ -47,6 +47,7 @@ export function useCameraScan() {
   const [quality, setQuality] = useState(INITIAL);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
+  const [diagnostics, setDiagnostics] = useState<ScanDiagnostics | null>(null);
   const [startupMessage, setStartupMessage] = useState("");
   const [videoSize, setVideoSize] = useState({ width: 640, height: 480 });
   const [frameRate, setFrameRate] = useState(0);
@@ -71,6 +72,7 @@ export function useCameraScan() {
     transition("idle");
     setProgress(0);
     setQuality(INITIAL);
+    setDiagnostics(null);
   }, [stop, transition]);
 
   useEffect(() => {
@@ -124,6 +126,7 @@ export function useCameraScan() {
     const controller = new AbortController();
     abortRef.current = controller;
     setError("");
+    setDiagnostics(null);
     setUnsaved(null);
     setProgress(0);
     setQuality(INITIAL);
@@ -195,6 +198,7 @@ export function useCameraScan() {
           usable: (samples.length / Math.max(frameQualities.length, 1)) * 100,
         };
         const result = analyze(samples, q);
+        setDiagnostics(result.diagnostics);
         if (result.heartRate === null) {
           setError(result.reason!);
           transition("failed");
@@ -310,6 +314,7 @@ export function useCameraScan() {
     quality,
     progress,
     error,
+    diagnostics,
     startupMessage,
     videoSize,
     frameRate,

@@ -51,7 +51,7 @@ APIs on every mobile browser. Use the same Wi-Fi network and the computer's LAN 
 - A fixed 30-second scan with progress, contextual guidance, cancellation,
   permission errors, background interruption handling, and camera cleanup.
 - Timestamped RGB skin sampling, POS extraction, filtering, spectral estimation,
-  confidence rejection, and deterministic quality scores. No random production BPM.
+  signal rejection, descriptive confidence, and deterministic quality scores. No random production BPM.
 - Validated IndexedDB storage, results, history, individual deletion, delete-all,
   and storage failure recovery without discarding an accepted result immediately.
 - Real-data trend charts with 7/30/90-day/all filters, accessible exact-value tables,
@@ -141,7 +141,7 @@ All inputs are deterministic and derived from actual samples or tracked frames:
 | Value             | Calculation                                                                        |
 | ----------------- | ---------------------------------------------------------------------------------- |
 | Lighting          | ROI luminance margin (25–240), capped plateau, penalized by clipped-pixel fraction |
-| Motion            | `clamp(100 − mean displacement of 5 landmarks × 4500)` per sampled frame           |
+| Motion            | `clamp(100 − mean displacement / max(face height, 0.2) × 1000/max(elapsed ms, 30) × 160)` across 5 landmarks |
 | Tracking          | Percentage of processed frames with one suitably positioned face                   |
 | Usable            | Accepted RGB frames divided by all processed scan frames                           |
 | Spectral SNR      | Energy within ±0.1 Hz of the peak vs remaining in-band energy                      |
@@ -154,9 +154,16 @@ consistency, not probability of medical correctness**.
 Reject if fewer than 300 samples, under 25 seconds of coverage, a timestamp gap
 over 650 ms, invalid timestamps/values, usable or tracking below 80%, motion below
 65%, lighting below 55%, spectral SNR below 3 dB, split-half disagreement over
-8 BPM, confidence below 60%, insufficient signal energy, excessive brightness
+8 BPM, insufficient signal energy, excessive brightness
 variation, or an unreliable band-edge peak. Rejected scans display a retry path
 and **no BPM**, and are not saved as valid scans.
+
+As of POS-1.1.0, the composite confidence score is descriptive, not an additional
+rejection gate on top of SNR and agreement. Estimates with confidence below 60%
+show a limited-confidence warning on screen and in exported reports. Failed scans
+offer expandable diagnostics showing the actual failed checks and values, without
+revealing an unaccepted BPM. Diagnostics remain in page memory and are not saved
+or uploaded. This change does not loosen the independent thresholds above.
 
 These are conservative engineering heuristics, not clinically calibrated limits.
 Periodic movement or lighting can still resemble a pulse. Static photos are not
@@ -204,9 +211,11 @@ face geometry, ROI sampling, analytics, schema validation and IndexedDB CRUD.
 Browser tests exercise onboarding, route layouts, 375/390/430 px and desktop,
 axe accessibility checks, reload persistence, trend filters, demo labeling,
 print CSS, deletion confirmation, permission denial, actual MediaPipe no-face
-detection and camera cleanup. A separate 30-second integration test drives the
-real tracker and sampling pipeline with a public test portrait and known synthetic
-color modulation. Test fixtures are isolated from application code and real data.
+detection and camera cleanup. Thirty-second integration scenarios drive the
+real tracker and sampling pipeline with a public test portrait and steady,
+varying, and absent synthetic color modulation. They check accepted estimates,
+rejection diagnostics, and camera cleanup. Test fixtures are isolated from
+application code and real data.
 
 **Physical iPhone/Android cameras, actual home-screen installation, VoiceOver /
 TalkBack, and real physiological accuracy require device testing.** Synthetic

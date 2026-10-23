@@ -14,7 +14,7 @@ async function seed(page: Page) {
     }),
   ).toBeVisible();
   const records = [
-    record({ createdAt: new Date().toISOString() }),
+    record({ createdAt: new Date().toISOString(), heartRateConfidence: 58 }),
     record({
       id: "ed20b82f-490b-4329-8aa5-cde836122a13",
       heartRate: 78,
@@ -140,6 +140,9 @@ test("persistence, history, trends, print, individual delete, and delete-all", a
   await expect(page.locator(".big-metric")).toContainText("72");
   await page.reload();
   await expect(page.locator(".big-metric")).toContainText("72");
+  await expect(
+    page.getByText("Limited signal confidence.", { exact: true }),
+  ).toBeVisible();
   await page.evaluate(() => {
     window.print = () => {
       document.body.dataset.printed = "yes";
@@ -148,6 +151,9 @@ test("persistence, history, trends, print, individual delete, and delete-all", a
   await page.getByRole("button", { name: "Export report" }).click();
   await expect(page.locator("body")).toHaveAttribute("data-printed", "yes");
   await page.emulateMedia({ media: "print" });
+  await expect(
+    page.getByText("Limited signal confidence.", { exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "VitalScan Wellness Scan" }),
   ).toBeVisible();

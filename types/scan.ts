@@ -29,4 +29,21 @@ export type Measurement = {
   quality: number;
   snrDb: number;
   reason?: string;
+  diagnostics: ScanDiagnostics;
+};
+export type ScanCheck = {
+  id: string;
+  label: string;
+  value: number | null;
+  unit: string;
+  requirement: string;
+  passed: boolean;
+};
+/** In-memory summaries only: no image, landmarks, RGB trace or rejected BPM. */
+export type ScanDiagnostics = {
+  algorithmVersion: string;
+  sampleCount: number;
+  durationSeconds: number;
+  usableFramesPerSecond: number;
+  checks: ScanCheck[];
 };

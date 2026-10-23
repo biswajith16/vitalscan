@@ -1,4 +1,20 @@
 /* VitalScan interface system: readable type, quiet surfaces, a focused scan flow. */
+.scan-diagnostic-details {
+  margin-block: 16px;
+}
+.scan-diagnostic-checks > div {
+  padding-block: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.scan-diagnostic-checks dt {
+  font-size: 13px;
+  font-weight: 650;
+}
+.scan-diagnostic-checks dd {
+  margin: 4px 0 0;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
 :root {
   --background: #f7f8fa;
   --surface: #fff;

@@ -19,6 +19,7 @@ import {
 import { useCameraScan } from "@/hooks/use-camera-scan";
 import { FaceIllustration } from "@/components/common/brand";
 import { ErrorNotice } from "@/components/common/ui";
+import { ALGORITHM_VERSION } from "@/lib/rppg/pipeline";
 export function Scanner() {
   const { videoRef, ...scan } = useCameraScan();
   const cameraStageRef = useRef<HTMLDivElement>(null);
@@ -245,6 +246,43 @@ export function Scanner() {
           </div>
           <div className="scan-actions">
             {scan.phase === "failed" && <ErrorNotice message={scan.error} />}
+            {scan.phase === "failed" && scan.diagnostics && (
+              <details className="camera-help scan-diagnostic-details">
+                <summary>Why this scan didn’t produce a reading</summary>
+                <p>
+                  {scan.diagnostics.sampleCount} usable frames across{" "}
+                  {scan.diagnostics.durationSeconds.toFixed(1)} seconds ·{" "}
+                  {scan.diagnostics.usableFramesPerSecond.toFixed(1)} usable
+                  fps.
+                </p>
+                <dl className="scan-diagnostic-checks">
+                  {scan.diagnostics.checks.map((check) => (
+                    <div key={check.id}>
+                      <dt>
+                        {check.label} — {check.passed ? "Passed" : "Not met"}
+                      </dt>
+                      <dd>
+                        {check.value === null
+                          ? "Unavailable"
+                          : check.id === "energy"
+                            ? check.value.toExponential(2)
+                            : ["valid-data", "band"].includes(check.id)
+                              ? check.passed
+                                ? "Yes"
+                                : "No"
+                              : check.value.toFixed(1)}{" "}
+                        {check.unit}. {check.requirement}.
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+                <p>
+                  Later checks run only if capture checks pass. These details
+                  stay on this page and aren’t saved or uploaded. Algorithm:{" "}
+                  {scan.diagnostics.algorithmVersion}.
+                </p>
+              </details>
+            )}
             {scan.unsaved && (
               <>
                 <ErrorNotice
@@ -301,6 +339,9 @@ export function Scanner() {
               signal will ask you to retry.
             </p>
           </div>
+          <p className="small muted">
+            Scanner {ALGORITHM_VERSION} · Experimental heart-rate estimate only
+          </p>
           <details className="camera-help">
             <summary>Camera not opening?</summary>
             <p>
