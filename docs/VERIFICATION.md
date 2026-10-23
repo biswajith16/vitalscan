@@ -8,7 +8,7 @@ See [the scan rejection investigation](SCAN_RELIABILITY_FIX.md) for this release
 | `npm test` | 49 passed across 6 files |
 | `npm run typecheck` | Passed |
 | `npm run lint` | Passed, no warnings |
-| `npm run build` | Passed using Next.js 16.3.8 and Webpack |
+| `npm run build` | Passed using Next.js 16.4.3 and Webpack |
 | `npm run test:e2e` | 19 passed in 3.7 minutes; 1 WebKit offline check intentionally skipped |
 | Responsive routes | All main routes fit 375, 390, 430 and 1280 px widths in Chromium and WebKit |
 | Accessibility | No axe WCAG 2 A/AA or 2.1 AA violations on audited home, scan, history and settings pages |

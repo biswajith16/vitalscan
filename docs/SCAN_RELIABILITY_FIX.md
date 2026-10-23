@@ -57,3 +57,15 @@ These checks do not validate physical cameras or clinical accuracy. Camera image
 processing, exposure, real motion and other artifacts can still prevent an
 estimate. A failure must remain a failure rather than being replaced with a demo
 reading or an unsupported vital-sign value.
+
+## Release dependency check
+
+The first staged build surfaced newly reported production advisories. Before
+promotion, Next.js and its lint configuration were updated from 16.3.8 to 16.4.3,
+and Zod from 4.6.5 to 4.6.7. The refreshed production-only npm audit reports zero
+advisories. A development-only advisory remains outside the runtime bundle.
+The dependency change is separate from the signal algorithm fix.
+
+References: [Next.js image optimization advisory](https://github.com/advisories/GHSA-2464-fhr4-w9xw),
+[Next.js cache advisory](https://github.com/advisories/GHSA-673q-mjm6-r5xr),
+and [Zod collection validation advisory](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5).

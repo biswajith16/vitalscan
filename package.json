@@ -20,11 +20,11 @@
     "@mediapipe/tasks-vision": "^1.0.1",
     "framer-motion": "^14.0.0",
     "lucide-react": "^1.51.0",
-    "next": "^16.3.8",
+    "next": "^16.4.3",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "recharts": "^3.10.1",
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
@@ -34,7 +34,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "eslint": "^9.39.5",
-    "eslint-config-next": "^16.3.8",
+    "eslint-config-next": "^16.4.3",
     "fake-indexeddb": "^6.2.5",
     "prettier": "^3.9.9",
     "sharp": "^0.35.5",
