@@ -9,7 +9,7 @@ See [the scan rejection investigation](SCAN_RELIABILITY_FIX.md) for this release
 | `npm run typecheck` | Passed |
 | `npm run lint` | Passed, no warnings |
 | `npm run build` | Passed using Next.js 16.4.3 and Webpack |
-| `npm run test:e2e` | 19 passed in 3.7 minutes; 1 WebKit offline check intentionally skipped |
+| `npm run test:e2e` | 19 passed in 3.6 minutes after dependency patches; 1 WebKit offline check intentionally skipped |
 | Responsive routes | All main routes fit 375, 390, 430 and 1280 px widths in Chromium and WebKit |
 | Accessibility | No axe WCAG 2 A/AA or 2.1 AA violations on audited home, scan, history and settings pages |
 | Camera permission | Denial recovery verified in Chromium and WebKit |
@@ -40,6 +40,30 @@ Screenshots of the final desktop and mobile home pages are saved beside this fil
 No user scan data is shown in these screenshots.
 
 ## Production release
+
+### October 23 deployment result
+
+- **URL**: [vitalscan-nine.vercel.app](https://vitalscan-nine.vercel.app).
+- **Target**: production.
+- **Status**: READY; staged, checked with authenticated HTTP, then promoted.
+- **Commit**: `7768b2a` (includes scan fix `6b91a67`).
+- **Framework**: Next.js 16.4.3.
+- **Build duration**: 54 seconds; post-build 20 seconds.
+- **Deployment**: `dpl_H9L8QubgCtXtvqN4RsehjM2Z626R`.
+- **Version check**: live `/scan` returns HTTP 200 and renders POS-1.1.0.
+- **Live camera scenarios**: four passed in 2.3 minutes on the public HTTPS URL:
+  changing-signal acceptance/persistence and flat-signal rejection/diagnostics in
+  both Chromium and WebKit. These use synthetic streams, not physical cameras.
+
+Post-deploy observability:
+
+- Error scan: `vercel logs` scoped to this deployment, error level, last hour
+  returned no logs. This does not monitor the client-side optical pipeline.
+- Drains: configuration not inspected or changed.
+- Monitoring: no new remote camera/measurement telemetry added; diagnostics are
+  local and physical-device behavior still requires user verification.
+
+### Existing hosting setup
 
 - Public HTTPS app: [vitalscan-nine.vercel.app](https://vitalscan-nine.vercel.app).
 - Private repository: [biswajith16/vitalscan](https://github.com/biswajith16/vitalscan),

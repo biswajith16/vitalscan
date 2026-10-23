@@ -296,11 +296,11 @@ asset versions during an active scan.
   sample-count requirement. Validation against reference sensors has not been done.
 - No blood pressure, glucose, oxygen saturation, temperature, HRV, respiratory rate,
   disease inference or diagnostic claims are implemented.
-- `npm audit` currently reports a development-only `braces` advisory propagated
-  through `eslint-config-next` (GHSA-vfj7-8cjw-p6xm). No patched braces release was
-  available at implementation time; do not downgrade the current Next.js stack to
-  the old version suggested by `npm audit --force`. Recheck before release. Runtime
-  dependencies had no reported advisories in the install audit.
+- On October 23, 2026, `npm audit --omit=dev` reports zero advisories after updating
+  Next.js to 16.4.3 and Zod to 4.6.7. The full audit still reports development-only
+  Vite 8.3.2 advisories in the test toolchain, not the deployed runtime. Keep test
+  tooling local; review its update separately. Do not use `npm audit --force` to
+  make unrelated breaking changes.
 
 ## Recommended Phase 2
 
