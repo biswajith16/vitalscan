@@ -44,6 +44,10 @@ Other acquisition and spectral failures still require a retry.
 - An old cancellation test initially matched two status regions after adding the
   preview announcement. Its locator was narrowed to the camera-loading region;
   camera cleanup assertions were retained.
+- The initial full browser run passed 19 scenarios with two cancellation-selector
+  failures and one existing WebKit offline skip. After the locator fix, both
+  cancellation tests and both preview workflows passed in a four-test rerun.
+  This verifies all 21 non-skipped scenarios across the full run and rerun.
 
 ## Interface review
 
@@ -57,4 +61,22 @@ are not verified. Synthetic output tests are not clinical validation.
 
 ## Deployment
 
-Release results are recorded here after staging, promotion and live verification.
+- **URL**: [vitalscan-nine.vercel.app/scan](https://vitalscan-nine.vercel.app/scan).
+- **Target**: production.
+- **Status**: READY, staged and promoted after local verification.
+- **Commit**: `898ef8e`.
+- **Framework**: Next.js 16.4.3; scanner POS-1.2.0.
+- **Build duration**: 48 seconds, plus 20 seconds post-build.
+- **Deployment**: `dpl_5xoFUGy1wx81FdDS1aqR68r6MgiU`.
+- **HTTP**: staged `/scan` returned 200 with POS-1.2.0. Inspecting the public
+  URL after promotion resolved to this deployment.
+- **Live verification**: four scenarios passed in 1.3 minutes on public HTTPS:
+  pending-permission cancellation and complete preview/retry/cleanup/history
+  isolation in Chromium and WebKit. Streams were synthetic, not user recordings.
+
+### Post-deploy observability
+
+- Error scan: deployment-scoped error logs over the last hour returned no logs.
+- Drains: configuration not inspected or changed.
+- Monitoring: no remote camera/measurement telemetry; local diagnostics only.
+  Physical-camera and physiological accuracy remain unverified.

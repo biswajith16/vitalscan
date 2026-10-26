@@ -1,5 +1,8 @@
 # Implementation verification
 
+Latest feature: [POS-1.2.0 unvalidated signal preview](SIGNAL_PREVIEW.md),
+October 25, 2026. The October 23 results below document the previous release.
+
 Verified October 23, 2026 on the local production build (POS-1.1.0).
 See [the scan rejection investigation](SCAN_RELIABILITY_FIX.md) for this release.
 
