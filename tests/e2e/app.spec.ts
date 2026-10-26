@@ -286,7 +286,9 @@ test("cancelling a pending permission request closes a late camera", async ({
     });
   });
   await page.getByRole("button", { name: "Enable camera & start" }).click();
-  await expect(page.getByRole("status")).toContainText("Allow camera access");
+  await expect(
+    page.locator(".camera-loading").getByRole("status"),
+  ).toContainText("Allow camera access");
   await page.getByRole("button", { name: "Cancel scan" }).click();
   await page.evaluate(() =>
     (

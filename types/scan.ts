@@ -25,11 +25,17 @@ export type AcquisitionQuality = {
 };
 export type Measurement = {
   heartRate: number | null;
+  /** Debug output only. Never convert this into a ScanRecord. */
+  preview?: SignalPreview;
   confidence: number;
   quality: number;
   snrDb: number;
   reason?: string;
   diagnostics: ScanDiagnostics;
+};
+export type SignalPreview = {
+  kind: "unvalidated-signal";
+  bpm: number;
 };
 export type ScanCheck = {
   id: string;

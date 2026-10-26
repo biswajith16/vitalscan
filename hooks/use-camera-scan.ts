@@ -17,7 +17,12 @@ import {
 import { ALGORITHM_VERSION, analyze } from "@/lib/rppg/pipeline";
 import { mean } from "@/lib/signal-processing/math";
 import { scanStorage } from "@/lib/storage/scans";
-import type { RGBSample, ScanRecord, ScanDiagnostics } from "@/types/scan";
+import type {
+  RGBSample,
+  ScanRecord,
+  ScanDiagnostics,
+  SignalPreview,
+} from "@/types/scan";
 
 type Phase =
   | "idle"
@@ -26,6 +31,7 @@ type Phase =
   | "scanning"
   | "analyzing"
   | "failed"
+  | "preview"
   | "complete";
 const INITIAL: FrameQuality = {
   position: false,
@@ -48,6 +54,7 @@ export function useCameraScan() {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
   const [diagnostics, setDiagnostics] = useState<ScanDiagnostics | null>(null);
+  const [preview, setPreview] = useState<SignalPreview | null>(null);
   const [startupMessage, setStartupMessage] = useState("");
   const [videoSize, setVideoSize] = useState({ width: 640, height: 480 });
   const [frameRate, setFrameRate] = useState(0);
@@ -73,6 +80,7 @@ export function useCameraScan() {
     setProgress(0);
     setQuality(INITIAL);
     setDiagnostics(null);
+    setPreview(null);
   }, [stop, transition]);
 
   useEffect(() => {
@@ -127,6 +135,7 @@ export function useCameraScan() {
     abortRef.current = controller;
     setError("");
     setDiagnostics(null);
+    setPreview(null);
     setUnsaved(null);
     setProgress(0);
     setQuality(INITIAL);
@@ -200,6 +209,11 @@ export function useCameraScan() {
         const result = analyze(samples, q);
         setDiagnostics(result.diagnostics);
         if (result.heartRate === null) {
+          if (result.preview) {
+            setPreview(result.preview);
+            transition("preview");
+            return;
+          }
           setError(result.reason!);
           transition("failed");
           return;
@@ -315,6 +329,7 @@ export function useCameraScan() {
     progress,
     error,
     diagnostics,
+    preview,
     startupMessage,
     videoSize,
     frameRate,

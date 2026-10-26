@@ -1,4 +1,33 @@
 /* VitalScan interface system: readable type, quiet surfaces, a focused scan flow. */
+.camera-stage.camera-stage-preview {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  aspect-ratio: auto;
+}
+.signal-preview {
+  padding: 32px 24px;
+  text-align: center;
+}
+.signal-preview h2 {
+  margin-block: 20px 8px;
+}
+.signal-preview p {
+  margin-block: 12px;
+}
+.signal-preview-value {
+  font-size: 64px;
+  font-weight: 650;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  margin-block: 20px;
+}
+.signal-preview-value span {
+  display: block;
+  font-size: 15px;
+  font-weight: 500;
+  margin-block-start: 8px;
+}
 .scan-diagnostic-details {
   margin-block: 16px;
 }

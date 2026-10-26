@@ -34,6 +34,7 @@ export function Scanner() {
   };
   const active = ["loading", "positioning", "scanning"].includes(scan.phase);
   const busy = scan.phase === "loading" || scan.phase === "analyzing";
+  const hasPreview = scan.phase === "preview" && scan.preview !== null;
   const exit = () => {
     if (
       scan.phase !== "scanning" ||
@@ -69,22 +70,31 @@ export function Scanner() {
             ? "Scanning…"
             : scan.phase === "analyzing"
               ? "Analyzing your signal…"
-              : scan.phase === "failed"
-                ? "We couldn’t get a reliable reading."
-                : scan.unsaved
-                  ? "Your scan is ready."
-                  : "A moment, just for you."}
+              : hasPreview
+                ? "Signal preview ready."
+                : scan.phase === "failed"
+                  ? "We couldn’t get a reliable reading."
+                  : scan.unsaved
+                    ? "Your scan is ready."
+                    : "A moment, just for you."}
         </h1>
         <p>
           {scan.phase === "scanning"
             ? "Keep still and breathe normally."
-            : "Find a comfortable seat and some soft, even light."}
+            : hasPreview
+              ? "The pipeline produced a candidate, not a validated pulse reading."
+              : "Find a comfortable seat and some soft, even light."}
         </p>
       </div>
+      <p className="sr-only" role="status">
+        {hasPreview
+          ? "Unvalidated signal preview ready. This is not a heart-rate measurement and has not been saved."
+          : ""}
+      </p>
       <div className="scanner-grid">
         <div
           ref={cameraStageRef}
-          className={`camera-stage ${active ? "camera-active" : ""}`}
+          className={`camera-stage ${active ? "camera-active" : ""} ${hasPreview ? "camera-stage-preview" : ""}`}
           style={
             {
               "--video-aspect": `${scan.videoSize.width} / ${scan.videoSize.height}`,
@@ -99,7 +109,33 @@ export function Scanner() {
             aria-label="Live front-camera preview"
             className={active ? "" : "hidden-video"}
           />
-          {!active && (
+          {hasPreview && scan.preview && (
+            <section
+              className="signal-preview"
+              aria-labelledby="signal-preview-title"
+            >
+              <span className="badge caution">Unvalidated · Not saved</span>
+              <h2 id="signal-preview-title">Signal preview</h2>
+              <p>Dominant signal rate</p>
+              <div className="signal-preview-value">
+                {scan.preview.bpm}
+                <span>BPM candidate</span>
+              </div>
+              <p>
+                <strong>Not a heart-rate measurement.</strong>
+              </p>
+              <p>
+                This number comes from the strongest repeating pattern in your
+                recording. It may reflect interference rather than your pulse.
+                Do not use it for health decisions.
+              </p>
+              <p className="small">
+                Preview only: not added to history, trends or reports. Camera
+                off.
+              </p>
+            </section>
+          )}
+          {!active && !hasPreview && (
             <div className="camera-placeholder">
               <FaceIllustration />
               <span>
@@ -117,14 +153,16 @@ export function Scanner() {
               <div />
             </div>
           )}
-          <div className="camera-top-label">
-            <span className="status-dot" />
-            {scan.phase === "loading"
-              ? "CONNECTING CAMERA"
-              : active
-                ? "CAMERA ON · LOCAL PROCESSING"
-                : "CAMERA OFF"}
-          </div>
+          {!hasPreview && (
+            <div className="camera-top-label">
+              <span className="status-dot" />
+              {scan.phase === "loading"
+                ? "CONNECTING CAMERA"
+                : active
+                  ? "CAMERA ON · LOCAL PROCESSING"
+                  : "CAMERA OFF"}
+            </div>
+          )}
           {busy && (
             <div className="camera-loading">
               <span className="loader" />
@@ -177,7 +215,9 @@ export function Scanner() {
               <h2>
                 {active
                   ? "Live quality checks"
-                  : "Set yourself up for a good scan"}
+                  : hasPreview
+                    ? "Preview warnings"
+                    : "Set yourself up for a good scan"}
               </h2>
               <ScanFace size={20} />
             </div>
@@ -194,6 +234,27 @@ export function Scanner() {
                   </span>
                 </div>
               ))
+            ) : hasPreview ? (
+              <>
+                <p className="small">
+                  These checks no longer block the signal preview. They still
+                  prevent it from being saved as a heart-rate estimate.
+                </p>
+                <ul>
+                  {scan.diagnostics?.checks
+                    .filter((check) => !check.passed)
+                    .map((check) => (
+                      <li key={check.id}>
+                        {check.label}: {check.value?.toFixed(1)} {check.unit}.{" "}
+                        {check.requirement}.
+                      </li>
+                    ))}
+                </ul>
+                <p className="small">
+                  Blood pressure, oxygen saturation and other vitals are not
+                  measured by this app.
+                </p>
+              </>
             ) : (
               <ol className="scan-tips">
                 <li>
@@ -246,9 +307,13 @@ export function Scanner() {
           </div>
           <div className="scan-actions">
             {scan.phase === "failed" && <ErrorNotice message={scan.error} />}
-            {scan.phase === "failed" && scan.diagnostics && (
+            {(scan.phase === "failed" || hasPreview) && scan.diagnostics && (
               <details className="camera-help scan-diagnostic-details">
-                <summary>Why this scan didn’t produce a reading</summary>
+                <summary>
+                  {hasPreview
+                    ? "Why this is only a preview"
+                    : "Why this scan didn’t produce a reading"}
+                </summary>
                 <p>
                   {scan.diagnostics.sampleCount} usable frames across{" "}
                   {scan.diagnostics.durationSeconds.toFixed(1)} seconds ·{" "}
@@ -301,14 +366,16 @@ export function Scanner() {
             )}
             {!active && !busy && !scan.unsaved && (
               <button className="button primary full" onClick={start}>
-                {scan.phase === "failed" ? (
+                {scan.phase === "failed" || hasPreview ? (
                   <RefreshCw size={19} />
                 ) : (
                   <Camera size={19} />
                 )}{" "}
-                {scan.phase === "failed"
-                  ? "Try again"
-                  : "Enable camera & start"}
+                {hasPreview
+                  ? "Scan again"
+                  : scan.phase === "failed"
+                    ? "Try again"
+                    : "Enable camera & start"}
                 <ArrowRight size={18} />
               </button>
             )}
@@ -335,8 +402,10 @@ export function Scanner() {
           <div className="scan-footnote">
             <Clock3 size={17} />
             <p>
-              Experimental camera-based estimate — not for medical use. A weak
-              signal will ask you to retry.
+              Experimental camera-based estimate — not for medical use. If only
+              signal separation or agreement fails, an unvalidated signal
+              preview appears instead. Invalid or unusable recordings still need
+              a retry.
             </p>
           </div>
           <p className="small muted">

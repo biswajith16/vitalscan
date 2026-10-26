@@ -12,7 +12,7 @@ import {
   spectrum,
   std,
 } from "@/lib/signal-processing/math";
-export const ALGORITHM_VERSION = "POS-1.1.0";
+export const ALGORITHM_VERSION = "POS-1.2.0";
 export const SAMPLE_RATE = 15;
 
 export function resample(samples: RGBSample[], fs = SAMPLE_RATE): RGBSample[] {
@@ -279,7 +279,23 @@ export function analyze(
   );
   // Confidence is a descriptive score derived from SNR and agreement, not a
   // third independent observation or a calibrated probability. Do not gate twice.
-  if (failures.length) return reject(failures[0], confidence, full.snrDb);
+  if (failures.length) {
+    const result = reject(failures[0], confidence, full.snrDb);
+    const failedChecks = diagnostics.checks.filter((check) => !check.passed);
+    // Let a developer see the dominant frequency when only these two quality
+    // checks fail. This may be noise: heartRate stays null and cannot be saved.
+    // Capture validity, signal energy, exposure and band boundaries still apply.
+    if (
+      failedChecks.every((check) => ["snr", "agreement"].includes(check.id)) &&
+      Number.isFinite(full.hz)
+    ) {
+      result.preview = {
+        kind: "unvalidated-signal",
+        bpm: Math.round(full.hz * 60),
+      };
+    }
+    return result;
+  }
   return {
     heartRate: Math.round(full.hz * 60),
     confidence,

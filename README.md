@@ -155,14 +155,31 @@ Reject if fewer than 300 samples, under 25 seconds of coverage, a timestamp gap
 over 650 ms, invalid timestamps/values, usable or tracking below 80%, motion below
 65%, lighting below 55%, spectral SNR below 3 dB, split-half disagreement over
 8 BPM, insufficient signal energy, excessive brightness
-variation, or an unreliable band-edge peak. Rejected scans display a retry path
-and **no BPM**, and are not saved as valid scans.
+variation, or an unreliable band-edge peak. These checks govern accepted readings;
+unaccepted scans are never saved as valid measurements.
+
+### Unvalidated signal preview (POS-1.2.0)
+
+When **only signal separation (SNR) or agreement across the scan** fails, the scan
+now displays the strongest spectral peak as a **BPM candidate**, rather than only
+an error. This is enabled automatically for prototype inspection. It is labeled
+"Unvalidated · Not saved" and "Not a heart-rate measurement" beside the number.
+The peak can be interference rather than a pulse. The two checks remain visible
+as warnings and still block acceptance and persistence.
+
+The preview has a separate type and UI phase; `heartRate` remains null. It never
+enters history, trends, latest-reading summaries, or exported scan reports, and is
+cleared on retry, cancellation or reload. Accepted readings behave as before.
+Capture validity, minimum samples/coverage, signal energy, exposure and analysis
+boundaries still apply: missing, invalid or flat data does not get a made-up value.
+No additional vital signs are inferred. See [preview verification](docs/SIGNAL_PREVIEW.md).
 
 As of POS-1.1.0, the composite confidence score is descriptive, not an additional
 rejection gate on top of SNR and agreement. Estimates with confidence below 60%
 show a limited-confidence warning on screen and in exported reports. Failed scans
 offer expandable diagnostics showing the actual failed checks and values, without
-revealing an unaccepted BPM. Diagnostics remain in page memory and are not saved
+revealing an unaccepted BPM inside the check list. POS-1.2.0 can separately show
+the labeled preview described above. Diagnostics remain in page memory and are not saved
 or uploaded. This change does not loosen the independent thresholds above.
 
 These are conservative engineering heuristics, not clinically calibrated limits.
